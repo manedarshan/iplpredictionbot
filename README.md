@@ -48,3 +48,4 @@ Columns: match_id | user | prediction | timestamp
 - Add the bot to your Telegram group.
 - Users send predictions like "MI+" or "CSK".
 - Bot records the latest prediction before freeze time.
+- At freeze time, any missing predictions are marked as `NA` in the sheet.

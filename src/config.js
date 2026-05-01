@@ -65,9 +65,16 @@ function buildFixtures() {
 }
 
 const FIXTURES = buildFixtures();
+const IST_OFFSET_MS = 330 * 60 * 1000; // IST is UTC+5:30
+
+function getISTNow() {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + IST_OFFSET_MS);
+}
 
 function getTodayFixtures() {
-  const today = new Date();
+  const today = getISTNow();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');

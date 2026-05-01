@@ -2,7 +2,7 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const { parsePrediction } = require('./parser');
-const { upsertPrediction } = require('./sheets');
+const { upsertPrediction, markMissingPredictions } = require('./sheets');
 const { getTodayFixtures } = require('./config');
 let USER_MAPPING = {};
 
@@ -19,17 +19,53 @@ if (!token) {
 
 const bot = new TelegramBot(token, { polling: true });
 
-function buildLocalDateTime(match) {
+const IST_OFFSET_MS = 330 * 60 * 1000; // IST is UTC+5:30
+
+function buildISTFreezeTime(match) {
   const [year, month, day] = match.date.split('-').map(Number);
   const [hours, minutes] = match.freezeTime.split(':').map(Number);
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  const utcMs = Date.UTC(year, month - 1, day, hours, minutes) - IST_OFFSET_MS;
+  return new Date(utcMs);
 }
 
 function isFreezeTimePassed(match) {
-  const now = new Date();
-  const freezeTime = buildLocalDateTime(match);
+  const now = Date.now();
+  const freezeTime = buildISTFreezeTime(match).getTime();
   return now > freezeTime;
 }
+
+const processedFreezeMatches = new Set();
+
+async function processFreezeMissingPredictions() {
+  const todayFixtures = getTodayFixtures();
+  for (const match of todayFixtures) {
+    if (processedFreezeMatches.has(match.id)) {
+      continue;
+    }
+    if (!isFreezeTimePassed(match)) {
+      continue;
+    }
+
+    try {
+      await markMissingPredictions(match.teamA, match.teamB, 'NA');
+      processedFreezeMatches.add(match.id);
+    } catch (error) {
+      console.error('Error marking missing predictions for match:', match.id, error);
+    }
+  }
+}
+
+setImmediate(() => {
+  processFreezeMissingPredictions().catch((error) => {
+    console.error('Error during initial freeze processing:', error);
+  });
+});
+
+setInterval(() => {
+  processFreezeMissingPredictions().catch((error) => {
+    console.error('Error during scheduled freeze processing:', error);
+  });
+}, 60 * 1000);
 
 function getCandidateMatch(msgText) {
   const todayFixtures = getTodayFixtures();

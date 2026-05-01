@@ -110,4 +110,58 @@ async function upsertPrediction(teamA, teamB, playerName, prediction) {
   }
 }
 
-module.exports = { upsertPrediction };
+async function markMissingPredictions(teamA, teamB, fillValue = 'NA') {
+  const sheets = await authenticateGoogleSheets();
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  await refreshCacheIfNeeded(sheets, spreadsheetId);
+
+  const matchKey = `${teamA}_VS_${teamB}`.toUpperCase();
+  const rowIndex = cache.matchKeyRows[matchKey];
+  if (!rowIndex) {
+    console.error('Match not found for matchKey:', matchKey);
+    return;
+  }
+
+  const rangeStart = columnToLetter(HEADER_START_COL);
+  const rangeEnd = columnToLetter(HEADER_END_COL);
+  const rowRange = `${SHEET_NAME}!${rangeStart}${rowIndex}:${rangeEnd}${rowIndex}`;
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: rowRange,
+  });
+
+  const rowValues = response.data.values && response.data.values[0] ? response.data.values[0] : [];
+  const updatedValues = [];
+  let needsUpdate = false;
+
+  for (let col = HEADER_START_COL; col <= HEADER_END_COL; col++) {
+    const index = col - HEADER_START_COL;
+    const currentValue = rowValues[index];
+    if (currentValue === undefined || currentValue === null || currentValue.toString().trim() === '') {
+      updatedValues.push(fillValue);
+      needsUpdate = true;
+    } else {
+      updatedValues.push(currentValue);
+    }
+  }
+
+  if (!needsUpdate) {
+    console.log('No missing predictions to mark for matchKey:', matchKey);
+    return;
+  }
+
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: rowRange,
+      valueInputOption: 'RAW',
+      resource: { values: [updatedValues] },
+    });
+    console.log('Marked missing predictions as NA for matchKey:', matchKey);
+  } catch (error) {
+    console.error('Failed to mark missing predictions for matchKey:', matchKey, error);
+  }
+}
+
+module.exports = { upsertPrediction, markMissingPredictions };
