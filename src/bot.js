@@ -90,13 +90,21 @@ bot.on('message', async (msg) => {
 
   if (!msg.text) return;
 
+  const userId = String(msg.from.id);
+  const username = msg.from.username || '';
   const firstName = msg.from.first_name || '';
   const lastName = msg.from.last_name || '';
   const fullName = `${firstName} ${lastName}`.trim();
 
-  const user = USER_MAPPING[fullName];
-  if (!user) {
-    console.log('User not mapped:', fullName);
+  const player = USER_MAPPING[userId] || USER_MAPPING[username] || USER_MAPPING[fullName];
+  if (!player) {
+    console.log('Unmapped user:', {
+      userId,
+      username,
+      fullName,
+      message: msg.text,
+      lookupKeys: [userId, username, fullName].filter(Boolean),
+    });
     return;
   }
 
