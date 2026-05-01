@@ -3,7 +3,14 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const { parsePrediction } = require('./parser');
 const { upsertPrediction } = require('./sheets');
-const { USER_MAPPING, getTodayFixtures } = require('./config');
+const { getTodayFixtures } = require('./config');
+let USER_MAPPING = {};
+
+try {
+  USER_MAPPING = JSON.parse(process.env.USER_MAPPING_JSON || "{}");
+} catch (err) {
+  console.error("Invalid USER_MAPPING_JSON", err);
+}
 
 const token = process.env.BOT_TOKEN;
 if (!token) {
