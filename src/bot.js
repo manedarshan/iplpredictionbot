@@ -17,7 +17,21 @@ if (!token) {
   throw new Error('BOT_TOKEN is required in .env');
 }
 
-const bot = new TelegramBot(token, { polling: true });
+// const bot = new TelegramBot(token, { polling: true });
+
+const bot = new TelegramBot(process.env.BOT_TOKEN, {
+  polling: false,
+});
+
+async function startBot() {
+  await bot.deleteWebHook();
+  await bot.startPolling({
+    interval: 1000,
+    params: { timeout: 10 },
+  });
+}
+
+startBot();
 
 const IST_OFFSET_MS = 330 * 60 * 1000; // IST is UTC+5:30
 
