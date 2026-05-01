@@ -1,0 +1,17 @@
+{
+  "name": "iplpredictionbot",
+  "version": "1.0.0",
+  "description": "A Telegram bot for IPL predictions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["telegram", "bot", "ipl"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
