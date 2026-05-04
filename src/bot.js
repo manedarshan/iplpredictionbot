@@ -135,8 +135,8 @@ bot.on('message', async (msg) => {
   }
 
   try {
-    await upsertPrediction(match.teamA, match.teamB, user, prediction);
-    console.log('Prediction saved:', { matchKey: `${match.teamA}_VS_${match.teamB}`.toUpperCase(), user, prediction });
+    await upsertPrediction(match.teamA, match.teamB, player, prediction);
+    console.log('Prediction saved:', { matchKey: `${match.teamA}_VS_${match.teamB}`.toUpperCase(), player, prediction });
     bot.sendMessage(msg.chat.id, `Prediction recorded: ${prediction}`);
   } catch (error) {
     console.error('Error saving prediction:', error);
